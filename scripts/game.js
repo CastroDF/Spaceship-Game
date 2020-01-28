@@ -17,8 +17,9 @@
         KEY_DOWN = 40,
         KEY_ENTER = 13,
         KEY_SPACE = 32,
-        player = new Rectangle(225, 650, 10, 10),
-        shots = [];
+        player = new Rectangle(225, 650, 10, 10, 3),
+        shots = [],
+        damaged = 0;
 
     window.requestAnimationFrame = (function () {
         return window.requestAnimationFrame ||
@@ -36,9 +37,11 @@
         score = 0;
         player.x = 225;
         player.y = 650;
+        player.health = 3;
+        player.timer = 0;
         shots.length = 0;
         enemies.length = 0;
-        enemies.push(new Rectangle(10, 0, 10, 10));
+        enemies.push(new Rectangle(10, 0, 10, 10, 2));
         gameover = false;
     }
     function paint(ctx) {
@@ -47,7 +50,8 @@
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         // Draw body
         ctx.fillStyle = '#0f0';
-        player.fill(ctx);
+        if (player.timer % 2 == 0)
+            player.fill(ctx);
         // Draw shots
         ctx.fillStyle = '#f00';
         for (var i = 0, l = shots.length; i < l; i++)
@@ -58,16 +62,26 @@
         // Draw pause
         if (pause) {
             ctx.textAlign = 'center';
-            ctx.fillText('PAUSE', 225, 350);
+            if (gameover)
+                ctx.fillText('GAME OVER', 235, 350);
+            else
+                ctx.fillText('PAUSE', 235, 350);
             ctx.textAlign = 'left';
         }
         // Draw enemies
         ctx.fillStyle = '#00f';
-        for (var i = 0, l = enemies.length; i < l; i++)
+        for (var i = 0, l = enemies.length; i < l; i++) {
+            if (enemies[i].timer % 2 == 0)
+                ctx.fillStyle = '#00f';
+            else
+                ctx.fillStyle = '#fff';
             enemies[i].fill(ctx);
+        }
         // Draw score
         ctx.fillStyle = '#fff';
         ctx.fillText('Score: ' + score, 0, 20);
+        // Draw remaining health
+        ctx.fillText('Health: ' + player.health, 210, 20);
     }
 
     function act() {
@@ -104,13 +118,23 @@
             }
             // Move Enemies
             for (var i = 0, l = enemies.length; i < l; i++) {
+                // Shot hit
+                if (enemies[i].timer > 0)
+                    enemies[i].timer--;
                 // Shot Intersects Enemy
                 for (var j = 0, ll = shots.length; j < ll; j++) {
                     if (shots[j].intersects(enemies[i])) {
                         score++;
-                        enemies[i].x = random(canvas.width / 10) * 10;
-                        enemies[i].y = 0;
-                        enemies.push(new Rectangle(random(canvas.width / 10) * 10, 0, 10, 10));
+                        enemies[i].health--;
+                        if (enemies[i].health < 1) {
+                            enemies[i].x = random(canvas.width / 10) * 10;
+                            enemies[i].y = 0;
+                            enemies[i].health = 2;
+                            enemies.push(new Rectangle(random(canvas.width / 10) * 10, 0, 10, 10, 2));
+                        }
+                        else {
+                            enemies[i].timer = 1;
+                        }
                         shots.splice(j--, 1);
                         ll--;
                     }
@@ -119,23 +143,39 @@
                 if (enemies[i].y > canvas.height) {
                     enemies[i].x = random(canvas.width / 10) * 10;
                     enemies[i].y = 0;
+                    enemies[i].health = 2;
                 }
                 // Player Intersects Enemy
-                if (player.intersects(enemies[i])) {
-                    gameover = true;
-                    pause = true;
+                if (player.intersects(enemies[i]) && player.timer < 1) {
+                    player.health--;
+                    player.timer = 20;
                 }
                 // Shot Intersects Enemy
                 for (var j = 0, ll = shots.length; j < ll; j++) {
                     if (shots[j].intersects(enemies[i])) {
                         score++;
-                        enemies[i].x = random(canvas.width / 10) * 10;
-                        enemies[i].y = 0;
-                        enemies.push(new Rectangle(random(canvas.width / 10) * 10, 0, 10, 10));
+                        enemies[i].health--;
+                        if (enemies[i].health < 1) {
+                            enemies[i].x = random(canvas.width / 10) * 10;
+                            enemies[i].y = 0;
+                            enemies[i].health = 2;
+                            enemies.push(new Rectangle(random(canvas.width / 10) * 10, 0, 10, 10, 2));
+                        }
+                        else {
+                            enemies[i].timer = 1;
+                        }
                         shots.splice(j--, 1);
                         ll--;
                     }
                 }
+            }
+            // Damaged
+            if (player.timer > 0)
+                player.timer--;
+            // GameOver
+            if (player.health < 1) {
+                gameover = true;
+                pause = true;
             }
         }
         // Pause/Unpause
@@ -144,11 +184,13 @@
             lastPress = null;
         }
     }
-    function Rectangle(x, y, width, height) {
+    function Rectangle(x, y, width, height, health) {
         this.x = (x == null) ? 0 : x;
         this.y = (y == null) ? 0 : y;
         this.width = (width == null) ? 0 : width;
         this.height = (height == null) ? this.width : height;
+        this.health = (health == null) ? 1 : health;
+        this.timer = 0;
     }
     Rectangle.prototype.intersects = function (rect) {
         if (rect != null) {
