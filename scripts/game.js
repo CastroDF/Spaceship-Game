@@ -21,7 +21,10 @@
         shots = [],
         powerups = [],
         multishot = 1,
-        messages = [];
+        messages = [],
+        elapsedTime = 0,
+        spritesheet = new Image();
+    spritesheet.src = 'assets/spritesheet.png';
 
     window.requestAnimationFrame = (function () {
         return window.requestAnimationFrame ||
@@ -47,6 +50,9 @@
         powerups.length = 0;
         messages.length = 0;
         enemies.push(new Rectangle(10, 0, 10, 10, 0, 2));
+        enemies.push(new Rectangle(140, 0, 10, 10, 0, 2));
+        enemies.push(new Rectangle(27, 0, 10, 10, 0, 2));
+        enemies.push(new Rectangle(400, 0, 10, 10, 0, 2));
         gameover = false;
     }
     function paint(ctx) {
@@ -54,13 +60,14 @@
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         // Draw body
-        ctx.fillStyle = '#0f0';
+        ctx.strokeStyle = '#0f0';
         if (player.timer % 2 == 0)
-            player.fill(ctx);
+            //player.fill(ctx);
+            player.drawImageArea(ctx, spritesheet, (~~(elapsedTime * 10) % 3) * 10, 0, 10, 10);
         // Draw shots
-        ctx.fillStyle = '#f00';
+        ctx.strokeStyle = '#f00';
         for (var i = 0, l = shots.length; i < l; i++)
-            shots[i].fill(ctx);
+            shots[i].drawImageArea(ctx, spritesheet, 70, (~~(elapsedTime * 10) % 2) * 5, 5, 5);
         //ctx.fillText('Shots: ' + shots.length, 0, 30);
         // Debug last key pressed
         ctx.fillStyle = '#fff';
@@ -74,13 +81,15 @@
             ctx.textAlign = 'left';
         }
         // Draw enemies
-        ctx.fillStyle = '#00f';
         for (var i = 0, l = enemies.length; i < l; i++) {
-            if (enemies[i].timer % 2 == 0)
-                ctx.fillStyle = '#00f';
-            else
-                ctx.fillStyle = '#fff';
-            enemies[i].fill(ctx);
+            if (enemies[i].timer % 2 == 0) {
+                ctx.strokeStyle = '#00f';
+                enemies[i].drawImageArea(ctx, spritesheet, 30, 0, 10, 10);
+            }
+            else {
+                ctx.strokeStyle = '#fff';
+                enemies[i].drawImageArea(ctx, spritesheet, 40, 0, 10, 10);
+            }
         }
         // Draw score
         ctx.fillStyle = '#fff';
@@ -89,18 +98,21 @@
         ctx.fillText('Health: ' + player.health, 210, 20);
         // Draw powerups
         for (var i = 0, l = powerups.length; i < l; i++) {
-            if (powerups[i].type == 1)
-                ctx.fillStyle = '#f90';
-            else
-                ctx.fillStyle = '#cc6';
-            powerups[i].fill(ctx);
+            if (powerups[i].type == 1) {
+                ctx.strokeStyle = '#f90';
+                powerups[i].drawImageArea(ctx, spritesheet, 50, 0, 10, 10);
+            }
+            else {
+                ctx.strokeStyle = '#cc6';
+                powerups[i].drawImageArea(ctx, spritesheet, 60, 0, 10, 10);
+            }
         }
         // Draw messages
         for (var i = 0, l = messages.length; i < l; i++)
             ctx.fillText(messages[i].string, messages[i].x, messages[i].y);
     }
 
-    function act() {
+    function act(deltaTime) {
         if (!pause) {
             // GameOver Reset
             if (gameover)
@@ -242,6 +254,10 @@
                     }
                 }
             }
+            // Elapsed time
+            elapsedTime += deltaTime;
+            if (elapsedTime > 3600)
+                elapsedTime -= 3600;
             // Damaged
             if (player.timer > 0)
                 player.timer--;
@@ -277,11 +293,17 @@
     Rectangle.prototype.fill = function (ctx) {
         ctx.fillRect(this.x, this.y, this.width, this.height);
     }
-    function Message(string,x,y){
-        this.string=(string==null)?'?':string;
-        this.x=(x==null)?0:x;
-        this.y=(y==null)?0:y;
-        }
+    Rectangle.prototype.drawImageArea = function (ctx, img, sx, sy, sw, sh) {
+        if (img.width)
+            ctx.drawImage(img, sx, sy, sw, sh, this.x, this.y, this.width, this.height);
+        else
+            ctx.strokeRect(this.x, this.y, this.width, this.height);
+    }
+    function Message(string, x, y) {
+        this.string = (string == null) ? '?' : string;
+        this.x = (x == null) ? 0 : x;
+        this.y = (y == null) ? 0 : y;
+    }
     document.addEventListener('keydown', function (evt) {
         lastPress = evt.keyCode;
         pressing[evt.keyCode] = true;
@@ -295,7 +317,7 @@
     }
     function run() {
         setTimeout(run, 50);
-        act();
+        act(0.05);
     }
     function init() {
         // Get canvas and context
