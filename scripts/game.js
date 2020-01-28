@@ -12,7 +12,10 @@
         KEY_UP = 38,
         KEY_RIGHT = 39,
         KEY_DOWN = 40,
-        KEY_ENTER = 13;
+        KEY_ENTER = 13,
+        KEY_SPACE = 32,
+        player = new Rectangle(225, 650, 10, 10),
+        shots = [];
 
     window.requestAnimationFrame = (function () {
         return window.requestAnimationFrame ||
@@ -23,17 +26,18 @@
             };
     }());
 
-    document.addEventListener('keydown', function (evt) {
-        lastPress = evt.which;
-    }, false);
-
     function paint(ctx) {
         // Clean canvas
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         // Draw body
         ctx.fillStyle = '#0f0';
-        ctx.fillRect(x, y, 10, 10);
+        player.fill(ctx);
+        // Draw shots
+        ctx.fillStyle = '#f00';
+        for (var i = 0, l = shots.length; i < l; i++)
+            shots[i].fill(ctx);
+        ctx.fillText('Shots: ' + shots.length, 0, 30);
         // Debug last key pressed
         ctx.fillStyle = '#fff';
         // Draw pause
@@ -47,29 +51,55 @@
     function act() {
         if (!pause) {
             // Move Rect
-            if (pressing[KEY_UP])
-                y -= 10;
+            /* if (pressing[KEY_UP])
+                y -= 10; */
             if (pressing[KEY_RIGHT])
-                x += 10;
-            if (pressing[KEY_DOWN])
-                y += 10;
+                player.x += 10;
+            /* if (pressing[KEY_DOWN])
+                y += 10; */
             if (pressing[KEY_LEFT])
-                x -= 10;
+                player.x -= 10;
             // Out Screen
-            if (x > canvas.width)
-                x = 0;
-            if (y > canvas.height)
-                y = 0;
-            if (x < 0)
-                x = canvas.width;
-            if (y < 0)
-                y = canvas.height;
+            if (player.x > canvas.width - player.width)
+                player.x = canvas.width - player.width;
+            if (player.x < 0)
+                player.x = 0;
+            // New Shot
+            if (lastPress == KEY_SPACE) {
+                shots.push(new Rectangle(player.x + 3, player.y, 5, 5));
+                lastPress = null;
+            }
+            // Move Shots
+            for (var i = 0, l = shots.length; i < l; i++) {
+                shots[i].y -= 10;
+                if (shots[i].y < 0) {
+                    shots.splice(i--, 1);
+                    l--;
+                }
+            }
         }
         // Pause/Unpause
         if (lastPress == KEY_ENTER) {
             pause = !pause;
             lastPress = null;
         }
+    }
+    function Rectangle(x, y, width, height) {
+        this.x = (x == null) ? 0 : x;
+        this.y = (y == null) ? 0 : y;
+        this.width = (width == null) ? 0 : width;
+        this.height = (height == null) ? this.width : height;
+    }
+    Rectangle.prototype.intersects = function (rect) {
+        if (rect != null) {
+            return (this.x < rect.x + rect.width &&
+                this.x + this.width > rect.x &&
+                this.y < rect.y + rect.height &&
+                this.y + this.height > rect.y);
+        }
+    }
+    Rectangle.prototype.fill = function (ctx) {
+        ctx.fillRect(this.x, this.y, this.width, this.height);
     }
     document.addEventListener('keydown', function (evt) {
         lastPress = evt.keyCode;
