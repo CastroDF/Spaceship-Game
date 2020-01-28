@@ -7,6 +7,9 @@
         y = 50,
         lastPress = null,
         pause = true,
+        gameover = true,
+        score = 0,
+        enemies = [],
         pressing = [],
         KEY_LEFT = 37,
         KEY_UP = 38,
@@ -26,6 +29,18 @@
             };
     }());
 
+    function random(max) {
+        return ~~(Math.random() * max);
+    }
+    function reset() {
+        score = 0;
+        player.x = 225;
+        player.y = 650;
+        shots.length = 0;
+        enemies.length = 0;
+        enemies.push(new Rectangle(10, 0, 10, 10));
+        gameover = false;
+    }
     function paint(ctx) {
         // Clean canvas
         ctx.fillStyle = '#000';
@@ -37,7 +52,7 @@
         ctx.fillStyle = '#f00';
         for (var i = 0, l = shots.length; i < l; i++)
             shots[i].fill(ctx);
-        ctx.fillText('Shots: ' + shots.length, 0, 30);
+        //ctx.fillText('Shots: ' + shots.length, 0, 30);
         // Debug last key pressed
         ctx.fillStyle = '#fff';
         // Draw pause
@@ -46,10 +61,20 @@
             ctx.fillText('PAUSE', 225, 350);
             ctx.textAlign = 'left';
         }
+        // Draw enemies
+        ctx.fillStyle = '#00f';
+        for (var i = 0, l = enemies.length; i < l; i++)
+            enemies[i].fill(ctx);
+        // Draw score
+        ctx.fillStyle = '#fff';
+        ctx.fillText('Score: ' + score, 0, 20);
     }
 
     function act() {
         if (!pause) {
+            // GameOver Reset
+            if (gameover)
+                reset();
             // Move Rect
             /* if (pressing[KEY_UP])
                 y -= 10; */
@@ -66,7 +91,7 @@
                 player.x = 0;
             // New Shot
             if (lastPress == KEY_SPACE) {
-                shots.push(new Rectangle(player.x + 3, player.y, 5, 5));
+                shots.push(new Rectangle(player.x + 3, player.y, 7, 7));
                 lastPress = null;
             }
             // Move Shots
@@ -75,6 +100,41 @@
                 if (shots[i].y < 0) {
                     shots.splice(i--, 1);
                     l--;
+                }
+            }
+            // Move Enemies
+            for (var i = 0, l = enemies.length; i < l; i++) {
+                // Shot Intersects Enemy
+                for (var j = 0, ll = shots.length; j < ll; j++) {
+                    if (shots[j].intersects(enemies[i])) {
+                        score++;
+                        enemies[i].x = random(canvas.width / 10) * 10;
+                        enemies[i].y = 0;
+                        enemies.push(new Rectangle(random(canvas.width / 10) * 10, 0, 10, 10));
+                        shots.splice(j--, 1);
+                        ll--;
+                    }
+                }
+                enemies[i].y += 10;
+                if (enemies[i].y > canvas.height) {
+                    enemies[i].x = random(canvas.width / 10) * 10;
+                    enemies[i].y = 0;
+                }
+                // Player Intersects Enemy
+                if (player.intersects(enemies[i])) {
+                    gameover = true;
+                    pause = true;
+                }
+                // Shot Intersects Enemy
+                for (var j = 0, ll = shots.length; j < ll; j++) {
+                    if (shots[j].intersects(enemies[i])) {
+                        score++;
+                        enemies[i].x = random(canvas.width / 10) * 10;
+                        enemies[i].y = 0;
+                        enemies.push(new Rectangle(random(canvas.width / 10) * 10, 0, 10, 10));
+                        shots.splice(j--, 1);
+                        ll--;
+                    }
                 }
             }
         }
