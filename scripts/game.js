@@ -24,7 +24,7 @@
         messages = [],
         elapsedTime = 0,
         spritesheet = new Image();
-    spritesheet.src = 'assets/spritesheet.png';
+    spritesheet.src = '../assets/spritesheet.png';
 
     window.requestAnimationFrame = (function () {
         return window.requestAnimationFrame ||
@@ -41,8 +41,8 @@
     function reset() {
         score = 0;
         multishot = 1;
-        player.x = 225;
-        player.y = 650;
+        player.x = 200;
+        player.y = 550;
         player.health = 3;
         player.timer = 0;
         shots.length = 0;
@@ -75,9 +75,9 @@
         if (pause) {
             ctx.textAlign = 'center';
             if (gameover)
-                ctx.fillText('GAME OVER', 235, 350);
+                ctx.fillText('GAME OVER', 205, 300);
             else
-                ctx.fillText('PAUSE', 235, 350);
+                ctx.fillText('PAUSE', 200, 300);
             ctx.textAlign = 'left';
         }
         // Draw enemies
@@ -95,7 +95,7 @@
         ctx.fillStyle = '#fff';
         ctx.fillText('Score: ' + score, 0, 20);
         // Draw remaining health
-        ctx.fillText('Health: ' + player.health, 210, 20);
+        ctx.fillText('Health: ' + player.health, 185, 20);
         // Draw powerups
         for (var i = 0, l = powerups.length; i < l; i++) {
             if (powerups[i].type == 1) {
